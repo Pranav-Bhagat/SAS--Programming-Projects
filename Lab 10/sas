@@ -1,0 +1,125 @@
+/*****************************************************************************
+* Name:        Pranav Bhagat
+* Assignment:  Lab 10 
+*****************************************************************************/
+
+
+/*---------------------------------------------------------------------------
+Question 1 
+---------------------------------------------------------------------------*/
+*macro variable for the location of data sets;
+*libname ss "/folders/myfolders/My_data/";
+
+%let path = /folders/myfolders/My_data/;
+
+
+/*---------------------------------------------------------------------------
+Question 2 
+---------------------------------------------------------------------------*/
+*part a;
+*importing parking data;
+data parking;
+	infile "&path.Data_parking.dat.webloc";
+	input date MONYY7. @15 monState COMMA9. @25 monNY COMMA5. Brinks;
+run;
+
+*part b;
+proc contents data=parking;
+
+
+*part c;
+proc print data=parking;
+
+*part d;
+*The average money collected by city of NY by Brinks is 6933.75.;
+*The average money collected by city of NY by other contractors is 6754.78.;
+*The Brinks contractors appear to have higher average.;
+proc means data=parking mean;
+	class Brinks;
+	var monNY;
+run;
+
+
+
+/*---------------------------------------------------------------------------
+Question 3 
+---------------------------------------------------------------------------*/
+*part a;
+data music;
+	infile "&path.Data_music_files.dat.webloc";
+	input @"ALBUM: " album $2. @"FILE:" song :$50. bytes :COMMA10.;
+
+	*partb;
+	length_title=length(song);
+
+run;
+
+proc print data=music; run;
+
+
+*part c;
+*The relationship looks about linear.;
+*The correlation is 0.18 and is weak.;
+proc corr data=music plots=matrix;
+	var length_title;
+	with bytes;
+run;
+
+*part d; 
+*The song is The_Suite_Theme.mp3. ;
+proc print data=music;
+where bytes>10000000;
+run;
+
+/*---------------------------------------------------------------------------
+Question 4
+---------------------------------------------------------------------------*/
+*part a;
+*importing the data in a temporary data set;
+data earthquakes;
+	infile "&path.Earthquake.dat.webloc";
+	input map $ magnitude @12 date YMDDTTM. lat long depth location $42.;
+run;
+
+*part b;
+*verifying the different variable types;
+proc contents data=earthquakes varnum; run;
+
+*part c ;
+*time series plot which sends all graphs to one folder;
+ods html gpath = "C:/Users/pranavbhagat/Google Drive/STAT_330/Labs/";
+*This allows me to name graphs. The reset=index option overwrites the current existing 
+graphs. ;
+ods graphics on / imagename="earthquakets" reset=index;
+proc sgplot data = earthquakes;
+	series x = date y = magnitude;
+	format date datetime10.;
+	xaxis label="Date";
+	yaxis label="Earthquake Magnitude";
+run;
+ods graphics off;
+
+*part d;
+*The 17 earthquakes in Mexico;
+proc freq data = earthquakes ;
+	where location contains "MEXICO";
+	tables location;
+run;
+
+*46 earthquakes in Alaska;
+proc freq data = earthquakes ;
+	where location contains "ALASKA";
+	tables location;
+run;
+
+*The other procs can find the number of earthquakes.;
+/*proc means data = earthquakes N;
+/*	where location contains "MEXICO";
+/*run;
+
+*The other procs that can find number of earthquakes.;
+/*proc print data=earthquakes;
+/*	where location contains "MEXICO";
+/*run;
+
+
