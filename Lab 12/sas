@@ -1,0 +1,102 @@
+/*****************************************************************************
+* Name:        Pranav Bhagat
+* Assignment:  Lab 12
+*****************************************************************************/
+
+*<--- TYPE CODE WITHIN THESE BOUNDS  ----  TYPE CODE WITHIN THESE BOUNDS --->;
+*1234567890123456789012345678901234567890123456789012345678901234567890123456;
+
+/*---------------------------------------------------------------------------
+Question 1 
+---------------------------------------------------------------------------*/
+%let path=/folders/myfolders/My_data/;
+
+/*---------------------------------------------------------------------------
+Question 2 
+---------------------------------------------------------------------------*/
+*part a: 
+-formatted date, team names with embedded spaces,
+ and no column alignment;
+
+data rosebowl;
+
+	*part b, import the data;
+	infile "&path.rosebowl.txt" ;
+	input date DATE10. team1 &$30. score1 :2. team2 &$30. score2 :2.;
+
+	*part d, create game outcomes;
+	if score1 > score2 then check="team 1 wins";
+	else if score1=score2 then check="tie";
+	else if score1<score2 then check="team 2 wins";
+run;
+
+*part c, verify that variables read in as appropriate type;
+proc contents data=rosebowl varnum; run;
+
+*part e, print ties;
+proc print data=rosebowl;
+	where check="tie";
+	format date MMDDYY10.;
+run;
+
+*part f, sort data;
+proc sort data=rosebowl;
+	by team1;
+run;
+
+
+data rosebowl2;
+	set rosebowl;
+	by team1;
+
+	*part f, create cumulative number of wins;
+	if first.team1 then num_wins=0;
+	if check="team 1 wins" then num_wins+1;
+
+	*part g, keep two variables for last obs per team;
+	if last.team1 then output;
+	keep team1 num_wins;
+run;
+
+*part g, print data;
+proc print data=rosebowl2; run;
+
+
+/*---------------------------------------------------------------------------
+Question 3 
+---------------------------------------------------------------------------*/
+*part a:
+-comma delimiters
+-missing values between two delimiters and embedded spaces
+-some decimals and not lined up in columns;
+
+*change format on fat;
+data icecream;
+
+	*part b, importing the data;
+	infile "&path.BenAndJerrys2.txt" dlm="," DSD ;
+	input flavor :$50. portion :3. calories :3. fatcalories  fat   satfat  transfat  cholesterol  sodium  carb  fiber :$3.
+	sugars  protein  year_intro :$4. year_ret :$4. desc :$300. notes :$300. ;
+
+	*part d, subset on grocery store flavors;
+	if notes ne "Scoop Shop Exclusive" ;
+
+run;
+
+proc print; run;
+
+*part c, verify variable types;
+proc contents data=icecream varnum; run;
+
+*part e, scatterplot;
+*This sends all graphs to one folder;
+*ods html gpath = "/folders/myfolders/My_data";
+*This allows me to name graphs.  The reset=index option overwrites the current
+graphs if the graphs are recreated;
+*ods graphics on / imagename="BenJerryscatter" reset=index;
+title "Grocery store Ben & Jerrys flavors";
+proc sgplot data=icecream;
+   scatter y=calories x=fat / colorresponse=carb
+    markerattrs=(symbol=CircleFilled size=10) colormodel=TwoColorRamp;
+run;
+ods graphics off;
