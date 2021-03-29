@@ -1,0 +1,127 @@
+/*****************************************************************************
+* Name:        Pranav Bhagat
+* Assignment:  Lab 14 
+*****************************************************************************/
+
+*<--- TYPE CODE WITHIN THESE BOUNDS  ----  TYPE CODE WITHIN THESE BOUNDS --->;
+*1234567890123456789012345678901234567890123456789012345678901234567890123456;
+
+/****************************************************************************** 
+Question 1
+*****************************************************************************/
+*path macro variable;
+%let path=/folders/myfolders/My_data/;
+
+
+/****************************************************************************** 
+Question 2
+*****************************************************************************/
+*create SAS library;
+libname flash "&path";
+
+
+/****************************************************************************** 
+Question 3
+*****************************************************************************/
+*part a, examining the contents;
+*note that variable names are not consistently boy and girl
+- this will need to be addressed before we can combine the data;
+proc contents data=flash.australia varnum; run;
+proc contents data=flash.brazil varnum; run;
+proc contents data=flash.france varnum; run;
+proc contents data=flash.india varnum; run;
+proc contents data=flash.russia varnum; run;
+proc contents data=flash.unitedstates varnum; run;
+
+*parts b and d;
+*b, create rank variable in each data set;
+*d, create country variable in each data set;
+%macro create_rank(dsn);
+data &dsn;
+	set flash.&dsn;
+	rank+1;
+	length country $12.;
+	country="&dsn";
+run;
+%mend;
+
+%create_rank(australia);
+%create_rank(brazil);
+%create_rank(france);
+%create_rank(india);
+%create_rank(russia);
+%create_rank(unitedstates);
+
+*part c, interleave data;
+data all;
+	set australia 
+		brazil (rename = (Menina = Girl Menino = Boy))
+		france (rename = (Fille = Girl  Garcon = Boy))
+		india  (rename = (Laraki = Girl Laraka = Boy))
+		russia (rename = (Devushka = Girl Malchik = Boy))
+		unitedstates;
+	by rank;
+run;
+
+*part e, print data;
+proc print data=all; run;
+
+
+/****************************************************************************** 
+Question 4
+*****************************************************************************/
+*part a, get to know data;
+proc contents data=flash.users varnum; run; *1797 obs;
+proc contents data=flash.projects varnum; run; *7266 obs;
+
+*Game plan - this would be a one to many merge 
+  -one ID could have multiple projects;
+
+*part b, combining the data;
+proc sort data=flash.users out=users; by UserID; run;
+proc sort data=flash.projects out=projects; by UserID; run;
+
+data users_projects;
+	merge users projects; 
+	by userid;
+run;
+*7273 obs;
+
+
+*part c, creating the three data sets;
+data complete incomplete no_project;
+	merge users (in=a) projects (in=b); 
+	by userid;
+
+	if enddate eq . then output incomplete; *3146 incomplete;
+	if enddate ne . then output complete;   *4127 complete;
+	if a and not b then output no_project;  *7 no project;
+
+run;
+
+*part d, working with the completed projects data;
+data complete2;
+	set complete;
+	by userid;
+
+	*create cumulative count;
+	if first.userid then num_proj=0;
+	if enddate ne . then num_proj+1;
+
+run;
+
+*largest number of completed projects is 8;
+proc freq data=complete2;
+	tables num_proj; 
+run;
+
+*this user is Joseph Turner;
+proc print data=complete2;
+where num_proj=8; 
+run;
+
+*Joseph Turners 8 projects;
+proc print data=complete2;
+where fname="JOSEPH" and lname="TURNER"; 
+format startdate MMDDYY10. enddate MMDDYY10.;
+run;
