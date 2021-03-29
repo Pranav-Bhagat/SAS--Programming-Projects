@@ -1,0 +1,69 @@
+/*************************
+Name: Pranav Bhagat
+Assignment: Lab 4
+*************************/
+
+*** Part a;
+
+data Student_loans;
+input name $ school $ loan interest_rate beginning_year school_years salary payment;
+time = 0;
+time = loan;
+monthly_interest = interest_rate/12;
+do until (time <= 0);
+	time = time - payment + time*monthly_interest; 
+	time = time + 1;
+end;
+
+year = int(beginning_year + school_years + time/12);
+datalines;
+Hank ParkU 45000 .059 2012 4 70000 850
+Sarah BlueMtn 40000 .058 2014 4 85000 900
+Steve Vassar 204000 .06 2012 5 80000 1200
+Chris Trinity 180000 .055 2010 4 90000 925
+Emily Amherst 120000 .058 2014 4 75000 950
+Jessica Berea 6000 .05 2013 5 65000 800
+Mark Rust 38000 .0575 2011 4 60000 850
+;
+run;
+
+proc print data = Student_loans;
+title "Scenario 1 of the Fixed Income/Payments";
+run;
+
+/*  Data loops over each observation listed
+within datalines and runs the code
+for each observation. */
+
+
+*** Part b;
+
+data Student_loans_2;
+input name $ school $ loan interest_rate beginning_year school_years salary payment;
+time = 0;
+time = loan;
+monthly_interest = interest_rate/12;
+do until (time <= 0);
+	time = time - payment + time*monthly_interest;
+	if mod(time, 12) = 0 then do;
+		salary = salary * (1 + .03);
+		payment = payment * (1 + .03);
+	end;
+	time = time + 1;
+end;
+
+year = int(beginning_year + school_years + time/12);
+datalines;
+Hank ParkU 45000 .059 2012 4 70000 850
+Sarah BlueMtn 40000 .058 2014 4 85000 900
+Steve Vassar 204000 .06 2012 5 80000 1200
+Chris Trinity 180000 .055 2010 4 90000 925
+Emily Amherst 120000 .058 2014 4 75000 950
+Jessica Berea 6000 .05 2013 5 65000 800
+Mark Rust 38000 .0575 2011 4 60000 850
+;
+run;
+
+proc print data = Student_loans_2;
+title "Scenario 2 of Increasing Salary/Payments";
+run;
