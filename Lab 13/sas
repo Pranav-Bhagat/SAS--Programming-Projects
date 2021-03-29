@@ -1,0 +1,109 @@
+/*****************************************************************************
+* Name: Pranav Bhagat
+* Assignment:  Lab 13
+*****************************************************************************/
+
+*<--- TYPE CODE WITHIN THESE BOUNDS  ----  TYPE CODE WITHIN THESE BOUNDS --->;
+*1234567890123456789012345678901234567890123456789012345678901234567890123456;
+
+/*---------------------------------------------------------------------------
+Question 1
+---------------------------------------------------------------------------*/
+*create macro variable for location of data sets;
+%let path = /folders/myfolders/sasuser.v94/My_data/;
+
+/*---------------------------------------------------------------------------
+Question 2
+---------------------------------------------------------------------------*/
+*import babies.csv data;
+PROC IMPORT OUT= WORK.babies
+        	DATAFILE= "&path.babies.txt"
+        	DBMS=CSV REPLACE;
+ 	GETNAMES=YES;
+ 	DATAROW=2;
+RUN;
+
+/*---------------------------------------------------------------------------
+Question 3
+---------------------------------------------------------------------------*/
+*part a and b, getting summary statistics, create data SAS data set;
+proc means data=babies n mean std;
+    class smoke;
+    var bwt ;
+    output out=summarystats;
+run;
+
+proc print data=summarystats;  run;
+
+*part c, rearrange summary stats without overall stats;
+proc transpose data=summarystats out=summarystats2;
+by smoke;
+var bwt;
+id _stat_;
+where smoke ne .;
+run;
+
+proc print data=summarystats2; run;
+
+*part d, creating format for smoking status;
+proc format;
+value smk  0="Non-smoking mothers"
+       	1="Smoking mothers";
+run;
+
+*part d, applying formats to data and dropping vars;
+data summarystats3;
+    set summarystats2;
+    format smoke smk. mean 5.1 std 5.1;
+    drop _name_ ;
+run;
+
+proc print data=summarystats3; run;
+
+*part e, exporting summary stats to the csv;
+proc export
+    data=summarystats3
+    outfile="&path.BabiesSummaryStats.csv"
+    dbms=CSV
+    replace;
+    ;
+run;
+
+/*---------------------------------------------------------------------------
+Question 4
+---------------------------------------------------------------------------*/
+
+*4a and 4c, fiting the linear model and create data set with results;
+proc reg data=babies;
+    model bwt = gestation parity age height weight smoke;
+    output out= reg_results predicted=yhat residual=resid;
+run;
+
+*4b, examining the parameter estimates;
+*i, all variables EXCEPT mother's age are associated with bwt;
+*ii, the following variables are associated with lower baby bwt:
+   parity - non first born babies tend to weigh less
+   age - older mothers tend to have babies that weigh less (not sig)
+   smoke - smoking mothers tend to have babies that weight less;
+proc contents data=reg_results varnum; run;
+
+*4d sort results;
+proc sort data=reg_results; by resid; run;
+
+proc print data=reg_results ; run;
+
+*4e - identify obs where abs(resid) > 50;
+*there are 4 babies whose predicted values differed from observed
+by more than 50 ounces;
+proc print data=reg_results ;
+where (resid lt -50 or resid gt 50) and resid ne .;
+run;
+
+*4f export results;
+proc export
+    data=reg_results
+    outfile="&path.BabiesResids.csv"
+    dbms=CSV
+    replace;
+    ;
+run;
