@@ -1,0 +1,98 @@
+/*************************
+Name: Pranav Bhagat
+Assignment: Lab 6
+*************************/
+
+*1);
+libname ss "/folders/myfolders/My_data/";
+
+
+*2);
+proc means data = ss.craftbeer mean median;
+var oz;
+run;
+/*
+The mean oz 13.6 and the median oz is 12.
+Typically, the size of a craft beer is about 12 oz.
+*/
+
+
+*3);
+proc means data = ss.craftbeer min p25 median p75 max mean;
+var abv;
+run;
+*
+Around half of the craft beers have an abv less than 5.5%.
+This is similar to lighter beers. The mean abv is approximately 6%, 
+which is slightly above the lighter beers.
+*
+
+
+*4);
+proc freq data = ss.craftbeer;
+table brewery;
+run;
+* The brewery with the greatest number of craft beers is
+Brewery Vivant (62). A large portion of the breweries produce only 1 craft
+beer like the Borderlands Brewing Company.
+*
+
+
+*5);
+proc means data = ss.craftbeer mean max min;
+class brewery;
+var abv;
+run;
+/*
+Portside Brewery is the highest average abv with 9.9%
+Southampton Publick House is the lowest average abv with 3.5%
+Upslope Brewing Company is the highest overall abv with 12.8%
+Uncommon Brewers is the lowest overall abv with 0.1%
+
+*/
+
+
+*6);
+proc freq data = ss.craftbeer;
+table state city;
+run;
+*
+Colorado has 265 craft beers which is more than the other states.
+Grand Rapids has 66 craft beers which is more than the other cities.
+*
+
+
+*7);
+proc means data = ss.craftbeer min p25 median p75 max mean stddev N;
+var abv oz;
+where style contains "Lager";
+run;
+
+proc means data = ss.craftbeer min p25 median p75 max mean stddev N;
+var abv oz;
+where style contains "Ale";
+run;
+
+proc means data = ss.craftbeer min p25 median p75 max mean stddev N;
+var abv oz;
+where style contains "IPA";
+run;
+*
+It seems like IPAs tend to have higher abv than Ales. Ales
+tend to have higher abv than Lagers. There doesn't seem to be
+noticeable differences in the recommended sizes.
+It looks like the Ales make up the largest portion of craft beers.
+*
+
+
+*8);
+proc format;
+value size
+    16 = "Pint"
+    low-<16 = "Sub-Pint"
+    16<-high = "Super-Pint";
+run;
+
+proc print data = ss.craftbeer;
+format oz size.;
+run;
