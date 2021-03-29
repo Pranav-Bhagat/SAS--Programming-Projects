@@ -1,0 +1,136 @@
+/*************************
+Name: Pranav Bhagat
+Assignment: Lab 8
+*************************/
+
+libname ss "/folders/myfolders/My_data";
+
+*Exercise 1;
+*a);
+proc ttest data = ss.lead alpha = .05 sides = 2;
+paired Ld72*Ld73;
+run;
+
+*
+This is a paired t-test for comparing population average
+lead blood concentration between 1972 and 1973.
+The p-value is .05. Therefore, we reject the null hypothesis
+and conclude the population average of the lead blood concentration is
+different between 1972 and 1973. The average level
+is lower in 1973 compared to 1972.
+*
+
+*b);
+proc ttest data = ss.lead alpha = .05 H0 = 5 sides = U;
+var Ld73;
+run;
+
+*
+This is a upper-tailed one-sided t-test for the population of the average
+lead blood level in 1973 being above 5 micrograms per 100 mL.
+The p-value is below .05 and so we reject the null hypothesis.
+We conclude that the population average in 1973 is more than the safe limit
+of 5 micrograms per 100 mL.
+*
+
+*c);
+proc corr data = ss.lead;
+var Iqv;
+with Iqp;
+run;
+
+*
+The correlation between verbal IQ and performance IQ is around .57.
+There is a positive linear relationship between them.
+*
+
+*d);
+proc ttest data = ss.lead alpha = .05 sides = 2;
+var FWT_l;
+class Group;
+run;
+
+*
+This is a two-sided two-sample independent t-test which compares the population
+average left hand finger wrist tapping ability across the two groups. 
+The p-value is above .05. Therefore, we fail to reject the null hypothesis. 
+We cannot conclude there is a difference between
+the average left hand finger wrist tapping ability across
+both the groups.
+*
+
+*Exercise 2;
+
+*a);
+%macro gen_ttest(dsn, quantvar, catvar, siglev, doplot);
+
+    %if &doplot = N %then %do;
+   	 ods graphics off;
+    %end;
+    
+    %if &doplot = Y %then %do;
+   	 ods graphics on;
+    %end;
+    
+    *b);
+    title "Two-Sample T-test for &quantvar by &catvar at the &siglev level";
+    proc ttest data = ss.&dsn alpha = &siglev;
+    var &quantvar;
+    class &catvar;
+    run;
+%mend;
+
+*c);
+%gen_ttest(lead, Iqf, Pica, .01, N);
+%gen_ttest(lead, Visrea_l, Sex, .05, Y);
+
+*d);
+%gen_ttest(lead, Visrea_r, Group, .05, N);
+%gen_ttest(lead, Audrea_r, Group, .05, N);
+%gen_ttest(lead, FWT_r, Group, .05, N);
+
+*
+Based on the 3 variables tested, FWT_r had a significant difference
+across the two groups.
+*
+
+*Extra Credit;
+%macro gen_ttest(dsn, quantvar, catvar, siglev, doplot);
+   		 
+    data nonmiss;
+    set ss.&dsn;
+    where &quantvar ne .;
+    run;
+    proc freq data = nonmiss noprint;
+    table &catvar / out = freqres;
+    run;
+    data temp;
+    set freqres;
+    if _N_ = 1 then do;
+   	 call symput("S1", count);
+    end;
+    if _N_ = 2 then do;
+   	 call symput("S2", count);
+    end;
+    run;
+    %if &s1 < 30 or &s2 < 30 %then %do;
+   	 title "Two-Sample t-test of &quantvar by &catvar at the &siglev level";
+   	 title2 "Warning: sample sizes of s1 and s2 might be too small for valid inference";
+    %end;
+    %if &s1 >= 30 and &s2 >= 30 %then %do;
+   	 title "Two-Sample t-test of &quantvar by &catvar at the &siglev level";
+    %end;
+    %if &doplot = N %then %do;
+   	 ods graphics off;
+    %end;
+    %if &doplot = Y %then %do;
+   	 ods graphics on;
+    %end;    
+    *b);
+    proc ttest data = ss.&dsn alpha = &siglev;
+    var &quantvar;
+    class &catvar;
+    run;
+%mend;
+%gen_ttest(lead, Iqf, Pica, .01, N);
+%gen_ttest(lead, Visrea_l, Sex, .05, Y);
