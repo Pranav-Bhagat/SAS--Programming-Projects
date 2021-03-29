@@ -1,0 +1,108 @@
+/*************************
+Name: Pranav Bhagat
+Assignment: Lab 3
+*************************/
+
+*** Exercise 1;
+
+%macro first_d(d=);
+
+	data weekdays;
+		holder = 0;
+
+		do year = 1901 to 2000;
+			do month = 1 to 12;
+				date_one = mdy(month, 1, year); * Date of First;
+
+				if weekday(date_one) = &d then do; * Checking Sunday;
+					holder = holder + 1;
+					output;
+				end;
+			end;
+		end;
+		drop year month;
+	run;
+
+	proc print data = weekdays;
+		format date_one mmddyy10.;
+		title "First Day of Month On The Weekday";
+	run;
+%mend first_d;
+
+%first_d(d = 1);
+%first_d(d = 2);
+%first_d(d = 3);
+%first_d(d = 4);
+%first_d(d = 5);
+%first_d(d = 6);
+%first_d(d = 7);
+
+
+*** Exercise 2;
+
+%macro sampling_distance_sim(n1, n2, sim_n, a, b);
+
+data sampling_distance;
+array sample_one (&n1);
+array sample_two (&n2);
+array sample_means_of_one (&sim_n);
+array sample_means_of_two (&sim_n);
+
+do k = 1 to &sim_n;
+	do i = 1 to &n1;
+		sample_one(i) = rand("uniform",&a,&b);
+	end;
+	sample_means_of_one(k) = mean(of sample_one1-sample_one&n1);
+
+	do j = 1 to &n2;
+		sample_two(j) = rand("uniform",&a,&b);
+	end;
+	sample_means_of_two(k) = mean(of sample_two1-sample_two&n2);
+end;
+
+mean_of_one = mean(of sample_means_of_one1-sample_means_of_one&sim_n);
+std_of_mean_one = std(of sample_means_of_one1-sample_means_of_one&sim_n);
+mean_of_two = mean(of sample_means_of_two1-sample_means_of_two&sim_n);
+std_of_mean_two = std(of sample_means_of_two1-sample_means_of_two&sim_n);
+
+keep mean_of_one std_of_mean_one mean_of_two std_of_mean_two;
+run;
+
+proc print data = sampling_distance;
+title "Simulated Samples from Uniform(&a, &b) for Sample Sizes: &n1, &n2";
+run;
+%mend;
+
+%sampling_distance_sim(n1=50, n2=150, sim_n=500, a=0, b=10);
+%sampling_distance_sim(n1=100, n2=250, sim_n=750, a=5, b=12);
+
+
+*** Exercise 3;
+
+%macro bdayfun(bday = , n = );
+	data parties;
+		present = today();
+		this_year = year(present);
+		my_birthday = &bday;
+
+		birthday_d = day(&bday);
+		birthday_m = month(&bday);
+		birthday_y = year(&bday);
+
+		do yr = this_year to (this_year + &n);
+			day_of_week = weekday(mdy(birthday_m, birthday_d, yr));
+			second_Friday = nwkdom(2, 6, birthday_m, yr);
+			fourth_Friday = nwkdom(4, 6, birthday_m, yr);
+			output;
+		end;
+		
+		drop present this_year birthday_d birthday_m birthday_y;
+	run;
+
+	proc print data = parties;
+		format my_birthday second_Friday fourth_Friday mmddyy10.;
+		title "Birthday Fun";
+	run;
+%mend bdayfun;
+
+%bdayfun(bday = mdy(1, 11, 1989), n = 20);
