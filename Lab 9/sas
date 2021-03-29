@@ -1,0 +1,108 @@
+/*************************
+Name: Pranav Bhagat
+Assignment: Lab 9
+*************************/
+
+libname ss "/folders/myfolders/My_data";
+
+*1);
+proc sgplot data = ss.mariokart;
+scatter x = ID y = totalPr;
+run;
+
+proc print data = ss.mariokart;
+where totalPr > 100;
+run;
+
+*
+Both of these two observations have total prices over $100.
+This is because the bundles include more games besides
+mario kart.
+*
+
+*)2, 3, 4;
+data mario;
+set ss.mariokart;
+where totalPr <= 100;
+if cond = "new" then condI = 1;
+else if cond = "used" then condI = 0;
+if stockPhoto = "yes" then photoI = 1;
+else if stockPhoto = "no" then photoI = 0;
+if wheels = 0 then wheelsnew = "0 wheels";
+else if wheels = 1 then wheelsnew = "1 wheel";
+else if wheels >= 2 then wheelsnew = "2+ wheels";
+run;
+
+*5);
+*a);
+proc freq data = mario;
+table wheelsnew;
+run;
+
+/*
+We do not have balanced data. However, we're doing a 
+one-way ANOVA so it is okay to use PROC ANOVA.
+*/
+
+* b) and c);
+proc anova data = mario;
+class wheelsnew;
+model totalPr = wheelsnew;
+means wheelsnew / hovtest bon;
+quit;
+*
+The p-value for ANOVA is below .05 Therefore, reject the null and conclude there is at least
+one difference among the population average total prices
+of the different number of wheels included.
+The multiple comparisons showed there to be significant
+differences between all of the groups.
+*
+
+* d);
+/*
+We have independent observations and large sample sizes
+but we cannot assume equal variances.
+*/
+
+*6);
+*a);
+proc corr data = mario plots = matrix;
+var totalPr;
+with duration nBids startPr shipPr SellerRate;
+run;
+
+* b);
+/*
+The duration appears to have the strongest linear association
+with totalPr with the correlation would be -.37416.
+*/
+
+* c);
+proc reg data = mario;
+model totalPr = Duration;
+quit;
+
+/*
+TotalPr = 52.37358 -1.31716 * Duration
+*/
+
+* d);
+*
+The observations are independent and the data has a linear pattern.
+The constant variance assumption is not satisfied, but the normality
+of the residuals is good. We could see this using the diagnostic plots in
+the PROC REG output.
+*.
+
+*e);
+proc reg data = mario;
+model totalpr = duration nBids startPr shipPr
+   			 SellerRate wheels CondI photoI
+   			 /selection = ADJRSQ;
+quit;
+
+*
+I used the adjusted R-square as the selection criteria. The best 
+model, including the Adjusted R-square value of
+0.7683, had the following variables: duration nBids startPr sellerRate wheels condI.
+*
