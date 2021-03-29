@@ -1,0 +1,55 @@
+/*************************
+Name: Pranav Bhagat
+Assignment: Lab 5
+*************************/
+
+* 1) library reference;
+libname ss '/folders/myfolders/My_data';
+
+* 2) placeholder data set;
+data gym; 
+set ss.newyears;
+length group $ 20;
+
+* The arrays for individual times;
+array inday(119);
+array outday(119);
+array ttime(119);
+
+* 3) Calculation of time at gym;
+do i=1 to 119;
+* Getting the minutes;
+	ttime(i)=(outday(i)-inday(i))/60;
+end;
+
+* 4) Daily time mean;
+average_daily_time = mean(of ttime:);
+
+* 5) Average start time;
+Start = mean(of inday1-inday119);
+
+* 6) Classification;
+if '5:00:00't <= Start < '10:00:00't then group = "Early-Birds" ;
+else if '10:00:00't <= Start < '17:00:00't then group = "Afternooners";
+else if '17:00:00't <= Start < '22:00:00't then group = "Late-Nighters";
+run;
+
+
+* 7) Temporary data sets for classifications;
+data early afternoon late;
+set gym;
+
+if group = "Early-Birds" then output early;
+else if group = "Afternooners" then output afternoon;
+else if group = "Late-Nighters" then output late;
+run;
+
+/*The data set WORK. EARLY has 99 observations and 362 variables.
+ The data set WORK. AFTERNOON has 42 observations and 362 variables.
+ The data set WORK. LATE has 104 observations and 362 variables. */
+
+* 8) print Afternooners;
+proc print data = afternoon;
+var average_daily_time Start group;
+format Start time.;
+run;
