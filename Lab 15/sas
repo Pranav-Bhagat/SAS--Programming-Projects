@@ -1,0 +1,222 @@
+/*****************************************************************************
+* Name:        Pranav Bhagat
+* Assignment:  Lab 15 
+*****************************************************************************/
+
+*<--- TYPE CODE WITHIN THESE BOUNDS  ----  TYPE CODE WITHIN THESE BOUNDS --->;
+*1234567890123456789012345678901234567890123456789012345678901234567890123456;
+
+/*---------------------------------------------------------------------------
+Question 1a,b - Lab 11 programming approach
+
+Data step 
+  -created cumulative statistics using sums and retains
+  -exported last observation per country to create country level summary 
+   statistics about the Olympic medalists
+
+Procedures
+   -used PROC PRINT to display the results
+---------------------------------------------------------------------------*/
+
+
+/*---------------------------------------------------------------------------
+Question 2a,b,c - Lab 15 game plan
+
+Data step 
+  -none required
+
+Procedures
+  -only need PROC TABULATE
+
+Table structure
+  -columns = summary statistics for ALL countries
+  -2 dimensional table
+  -pages = none
+  -rows = countries
+  
+  
+---------------------------------------------------------------------------*/
+
+
+
+/*---------------------------------------------------------------------------
+Question 3 
+---------------------------------------------------------------------------*/
+*create flash library;
+
+libname flash "/folders/myfolders/My_data/";
+
+*there are 496 observations in this data set;
+*each observation represents an olympic medalist;
+proc contents data=flash.O2012 varnum; run;
+proc freq data=flash.O2012; run;
+
+
+/*---------------------------------------------------------------------------
+Question 4 - establish table structure
+---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------
+4a - the rows for different countries and a single column representing the 
+     number of Olympic medalists from that country
+---------------------------------------------------------------------------*/
+proc tabulate data=flash.O2012;
+	class country  ;
+	table country, ALL ;
+run;
+
+/*---------------------------------------------------------------------------
+4b, add column that represents the total number of medals won by that country
+---------------------------------------------------------------------------*/
+proc tabulate data=flash.O2012;
+	class country  ;
+	var total ;
+	table country, ALL*(N total) ;
+run;
+
+/*---------------------------------------------------------------------------
+4c,  three statistics for the total number of medals: 
+     sum, average total medals won, and maximum total medals won by an athlete
+---------------------------------------------------------------------------*/
+proc tabulate data=flash.O2012;
+	class country  ;
+	var total ;
+	table country, ALL*(N total*(SUM MEAN MAX)) ;
+run;
+
+
+/*---------------------------------------------------------------------------
+4d,  two additional columns for the average age and weight of the 
+     Olympic athletes
+---------------------------------------------------------------------------*/
+proc tabulate data=flash.O2012;
+	class country  ;
+	var total age weight;
+	table country, ALL*(N total*(sum mean max) age*mean weight*mean) ;
+run;
+
+/*---------------------------------------------------------------------------
+4e, two additional columns for the gender percents
+---------------------------------------------------------------------------*/
+
+%let path=/folders/myfolders/My_data/;
+
+ods pdf file="&path.Lab15tableQ4.pdf";
+options NODATE ;
+proc tabulate data=flash.O2012;
+	class country gender ;
+	var total age weight;
+	table country, ALL*(N total*(SUM MEAN MAX) age*MEAN weight*MEAN gender*ROWPCTN) ;
+run;
+ods pdf close;
+
+/*---------------------------------------------------------------------------
+Question 5, modifying the labels
+---------------------------------------------------------------------------*/
+ods pdf file="&path.Lab15tableQ5.pdf";
+options NODATE ;
+proc tabulate data=flash.O2012;
+	class country gender ;
+	var total age weight;
+	table country=" ", ALL=""*(N="# Medalists" total*(SUM="Sum" MEAN="Ratio" MAX="Max per Athlete") age*MEAN="Average" weight*MEAN="Average" gender*ROWPCTN=" ") / box="Country";
+	label total="Total Medals"
+	      age="Age (yrs)"
+	      weight="Weight (kg)" ;
+run;
+ods pdf close;
+
+/*---------------------------------------------------------------------------
+Question 6, modifying the formatting
+---------------------------------------------------------------------------*/
+proc format;
+	value $mygender "M"="Male" "F"="Female";
+	picture pct(round) low-high='009.9%';
+run; 
+
+
+ods pdf file="&path.Lab15tableQ6.pdf";
+options NODATE ;
+proc tabulate data=flash.O2012;
+	class country gender ;
+	var total age weight;
+	table country=" ", 
+	   ALL=""*(N="# Medalists" total*(SUM="Sum"*f=3. MEAN="Ratio" MAX="Max per Athlete"*f=3.) age*MEAN="Average"*f=5.1 weight*MEAN="Average"*f=5.1 gender*ROWPCTN=" "*f=pct.) 
+       / box="Country" misstext="---";
+	label total="Total Medals"
+	      age="Age (yrs)"
+	      weight="Weight (kg)" ;
+	format gender $mygender.;
+run;
+ods pdf close;
+
+/*---------------------------------------------------------------------------
+Question 7, applying the highlighting
+---------------------------------------------------------------------------*/
+proc format;
+	value num 20-high="Chartreuse";
+run; 
+
+
+proc tabulate data=flash.O2012;
+var total age weight;
+class country gender ;
+table country=" ", 
+	ALL=""*(n="# Medalists"*{style={background=num.}} total*(sum="Sum"*f=3. mean="Ratio" max="Max per Athlete"*f=3.) 
+            age*mean="Average"*f=5.1 weight*mean="Average"*f=5.1 gender*rowpctn=" "*f=pct.) 
+	/ box="Country" misstext="---";
+format gender $mygender.;
+label total="Total Medals"
+	  age="Age (yrs)"
+	  weight="Weight (kg)";
+run;
+
+/*---------------------------------------------------------------------------
+Question 8, exporting to a pdf
+---------------------------------------------------------------------------*/
+ods pdf file="&path.Lab15table_&hlcol.Q9.pdf" ;
+options NODATE NONUMBER;
+proc tabulate data=flash.O2012;
+var total age weight;
+class country gender ;
+table country=" ", 
+	ALL=""*(n="# Medalists"*{style={background=num.}} total*(sum="Sum"*f=3. mean="Ratio" max="Max per Athlete"*f=3.) 
+            age*mean="Average"*f=5.1 weight*mean="Average"*f=5.1 gender*rowpctn=" "*f=pct.) 
+	/ box="Country" misstext="---";
+format gender $mygender.;
+label total="Total Medals"
+	  age="Age (yrs)"
+	  weight="Weight (kg)";
+run;
+ods pdf close;
+
+
+/*---------------------------------------------------------------------------
+Question 9, creating macro
+---------------------------------------------------------------------------*/
+options mprint symbolgen mlogic;
+%macro checkoptions(hlcol,mystyle);
+ods pdf file="&path.Lab15table_&hlcol._&mystyle..pdf" style=&mystyle;
+options NODATE NONUMBER;
+title ;
+title2 "Style = &mystyle and Highlight Color = &hlcol";
+proc tabulate data=flash.O2012;
+var total age weight;
+class country gender ;
+table country=" ", 
+	ALL=""*(n="# Medalists"*{style={background=num.}} total*(sum="Sum"*f=3. mean="Ratio" max="Max per Athlete"*f=3.) 
+            age*mean="Average"*f=5.1 weight*mean="Average"*f=5.1 gender*rowpctn=" "*f=pct.) 
+	/ box="Country" misstext="---";
+format gender $mygender.;
+label total="Total Medals"
+	  age="Age (yrs)"
+	  weight="Weight (kg)";
+run;
+title ;
+title2 ;
+ods pdf close;
+%mend;
+
+%checkoptions(Chartreuse,Pearl);
+%checkoptions(Lilac,sasweb);
+%checkoptions(Aqua,journal);
+%checkoptions(LightYellow,fancyprinter);
